@@ -1,0 +1,1632 @@
+using AI.Models;
+using AI.Models.CustomModel;
+using Microsoft.AspNetCore.Http;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using Prompt.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using Vega;
+
+namespace AI.Services
+{
+    public class BullMaster : CommonService, IBullMaster
+    {
+        private Repository<BullMasterModel> _repoBullMaster { get; set; }
+        private Repository<BullFilterModel> _repoBullFilter { get; set; }
+        private Repository<AICallModel> _repoAICall { get; set; }
+        private Repository<BullWiseReportModel> _repoBullWiseReportModel { get; set; }
+
+
+        public BullMaster(IHttpContextAccessor httpContext, ICurrentUser currentuser)
+             : base(httpContext, currentuser) { }
+
+        public ApiResponse Add(BullMasterModel bullModel)
+        {
+            ApiResponse apiResponse;
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullMaster = new Repository<BullMasterModel>(connection);
+                BullMasterModel BullMaster = _repoBullMaster.ReadOne(criteria: "IsActive=@act and ltrim(rtrim(BullNo))=ltrim(rtrim(@BNo))",
+                    parameters: new
+                    {
+                        act = (int)RecordStatusEnum.Active,
+                        BNo = bullModel.BullNo
+                    });
+                //add
+                _repoBullMaster.Add(bullModel);
+                _repoBullMaster.Add(bullModel,"abc");
+                _repoBullMaster.Add<BullMasterModel>((IEnumerable<BullMasterModel>)bullModel);
+
+                //readall
+                _repoBullMaster.ReadAll(RecordStatusEnum.Active);
+                _repoBullMaster.ReadAll("name", RecordStatusEnum.Active);
+                _repoBullMaster.ReadAll("expirydate", criteria: "IsActive=@act and ltrim(rtrim(BullNo))=ltrim(rtrim(@BNo)))",
+                parameters: new
+                {
+                    act = (int)RecordStatusEnum.Active,
+                    BNo = bullModel.BullNo
+                }, RecordStatusEnum.Active);
+                _repoBullMaster.ReadAll("Bullweight", criteria: "IsActive=@act and ltrim(rtrim(BullNo))=ltrim(rtrim(@BNo)))",
+                parameters: new
+                {
+                    act = (int)RecordStatusEnum.Active,
+                    BNo = bullModel.BullNo
+                }, "desc", RecordStatusEnum.Active);
+                //count
+                _repoBullMaster.Count(RecordStatusEnum.All);
+                long i = _repoBullMaster.Count(queryorCriteria: "select * from bullmaster", null, status: RecordStatusEnum.Active);
+                //ExecuteNonQuery
+                _repoBullMaster.ExecuteNonQuery("select * from bull");
+                //query
+                _repoBullMaster.Exists(1001);
+                _repoBullMaster.Exists(criteria: "IsActive=@act and BullNo=@BNo", parameters: new
+                {
+                    act = (int)RecordStatusEnum.Active,
+                    BNo = bullModel.BullNo
+                });
+                _repoBullMaster.Query<BullMasterModel>("select * from bullmodel");
+                //_repoBullMaster.Query<BullMasterModel>()
+                _repoBullMaster.Query<BullMasterModel>("select * from bullmodel where id=@Id ", orderBy: "desc", pageNo: 20, pageSize: 974, parameters: new
+                {
+                    Id = bullModel.BreedMasterId
+                });
+                _repoBullMaster.ExecuteReader("select * from bullmaster");
+                //_repoBullMaster.ExecuteScalar()
+                List<BullWiseReportFilterModel> list = _repoBullMaster.Query<BullWiseReportFilterModel, BullMasterModel>("q", new Parameter("age", System.Data.DbType.Int32, 23));
+
+                _repoBullMaster.Add(bullModel);
+                _repoBullMaster.Add(bullModel, "name");
+               // List<string> list = _repoBullMaster.Add<BullMasterModel>(Data:, BatchSize: 1000);
+
+                _repoBullMaster.Delete(10001,updatedBy:"name");
+
+                _repoBullMaster.Delete(i, 20, updatedBy: "name");
+
+                _repoBullMaster.Update(bullModel);
+                _repoBullMaster.Update(bullModel, "name");
+                
+
+                if (BullMaster == null)
+                {
+                    bullModel.CreatedBy = _currentUser?.Info?.Id;
+                    _repoBullMaster.Add(bullModel);
+                    apiResponse = new ApiResponse()
+                    {
+                        Message = string.Format("Bull Saved with #{0}", bullModel.BullNo),
+                        StatusCode = StatusCodes.Status200OK,
+                       // Data = bullModel
+                       Data=true
+                    };
+                }
+                else
+                {
+                    apiResponse = new ApiResponse()
+                    {
+                        Message = string.Format("Bull No already exists with #{0}", bullModel.BullNo),
+                        StatusCode = StatusCodes.Status409Conflict,
+                        Data=false
+                    };
+                }
+            }
+            return apiResponse;
+        }
+        
+        public ApiResponse Update(long id, BullMasterModel bullModel)
+        {
+            ApiResponse apiResponse;
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullMaster = new Repository<BullMasterModel>(connection);
+
+                BullMasterModel bullMaster = _repoBullMaster.ReadOne(
+                    criteria: "BullNo=@BNo and bullMasterid<>@BId and Species=@species and IsActive=@act",
+                    parameters: new { BNo = bullModel.BullNo, BId = id, species = bullModel.Species, act = (int)RecordStatusEnum.Active });
+
+                if (bullMaster != null)
+                {
+                    apiResponse = new ApiResponse()
+                    {
+                        Message = string.Format("Bull No already exists with #{0}", bullModel.BullNo),
+                        StatusCode = StatusCodes.Status409Conflict,
+                        Data = false
+                    };
+                }
+                else
+                {
+                    BullMasterModel objbullMasterNew;
+                    objbullMasterNew = _repoBullMaster.ReadOne(criteria: "IsActive=@act and bullMasterid=@Id",
+                    parameters: new { act = (int)RecordStatusEnum.Active, Id = id });
+
+                    objbullMasterNew = bullModel.GetMapped(objbullMasterNew);
+
+
+                    objbullMasterNew.UpdatedBy = _currentUser?.Info?.Id;
+                    objbullMasterNew.IsActive = true;
+                    _repoBullMaster.Update(objbullMasterNew);
+
+                    apiResponse = new ApiResponse()
+                    {
+                        Message = string.Format("Changes Saved to Bull #{0}", bullModel.BullNo),
+                        StatusCode = StatusCodes.Status200OK,
+                       // Data = bullModel
+                       Data=true
+                    };
+                }
+            }
+            return apiResponse;
+        }
+        
+        public ApiResponse GetById(long id)
+        {
+            ApiResponse response = default(ApiResponse);
+            BullMasterModel result = new BullMasterModel();
+            string strQuery;
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullMaster = new Repository<BullMasterModel>(connection);
+
+                strQuery = $@"SELECT * FROM BullMaster                                
+                                where IsActive=@act AND BullMasterId = @bmId";
+                result = _repoBullMaster.Query<BullMasterModel, BullMasterModel>(strQuery, 
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active), 
+                    new Parameter("bmId", System.Data.DbType.Int64, id)).FirstOrDefault();
+            }
+
+            if (null == result)
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "No Record Found",
+                    Data = result
+                };
+            else
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = result
+                };
+            return response;
+        }
+        
+        public ApiResponse Delete(long id)
+        {
+            ApiResponse apiResponse = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullMaster = new Repository<BullMasterModel>(connection);
+                _repoAICall = new Repository<AICallModel>(connection);
+                BullMasterModel bullMaster = _repoBullMaster.ReadOne(id);
+                
+                if (bullMaster != null && bullMaster.IsActive)
+                {
+                    if (_repoAICall.Exists("BullMasterId = @BNo and IsActive=@act",
+                        new
+                        {
+                            BNo = bullMaster.BullMasterId,
+                            act = RecordStatusEnum.Active
+                        }))
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status409Conflict,
+                            Message = string.Format("#{0} Bull No Being Used in AI Calls ", bullMaster.BullNo),
+                            Data = false
+                        };
+                    else
+                    {
+                        _repoBullMaster.Delete(id, _currentUser?.Info?.Id);
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            Message = "Record deleted successfully",
+                            Data = true
+                        };
+                    }
+                }
+                else
+                {
+                    apiResponse = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status204NoContent,
+                        Message = "Bull Not Found",
+                        Data = false
+                    };
+                }
+            }
+            return apiResponse;
+        }
+        
+        public ApiResponse GetAll(Pagination pagination, string searchBy, bool isExpired)
+        {
+            ApiResponse response;
+            Pagination<BullMasterListModel> pgData;
+            pagination.SortBy = string.IsNullOrWhiteSpace(pagination.SortBy) ? "BullMasterId DESC" : pagination.SortBy.Trim();
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullMaster = new Repository<BullMasterModel>(connection);
+                string strQuery = @"select BM.BullMasterId,ss.Name as SemenStation,BM.BullNo,BM.BirthDate,b.Name as BullBreed,BM.SemenProductionDate,
+                    LV.LookupValue AS Species,BM.BullBirthPlace, BM.BreedingValue,BM.IsSexedSemen
+                    from BullMaster BM with(nolock)
+                    left outer join LookupValues LV with(nolock) on LV.LookupValuesId=BM.Species
+                    left outer join Semenstation ss with(nolock) on ss.SemenStationId=BM.SemenStationId and ss.IsActive=@act
+                    left outer join BreedMaster b with(nolock) on b.BreedMAsterId=BM.BreedMasterId and b.IsActive=@act
+                    where BM.IsActive=@act";
+
+                if (isExpired) strQuery += @" and BM.ExpiryDate<getdate() ";
+                else strQuery += @" and isnull(BM.ExpiryDate,getdate())>=getdate() ";
+
+                if (!string.IsNullOrEmpty(searchBy))
+                    strQuery += @" AND BM.BullNo LIKE concat('%',@srcby,'%') OR b.Name LIKE concat('%',@srcby,'%') OR LV.LookupValue LIKE concat('%',@srcby,'%')";
+
+                pgData = _repoBullMaster.Query<BullMasterListModel, BullMasterModel>(strQuery,
+                    pagination.SortBy, pagination.PageNo, pagination.RecordsPerPage,
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                    new Parameter("srcby", System.Data.DbType.AnsiString, searchBy));
+            }
+            if (null == pgData?.Data || 0 >= pgData?.Data.Count())
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "No Record Found",
+                    Data = pgData
+                };
+            else
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = pgData
+                };
+            return response;
+        }
+        
+        public ApiResponse FillBull(int TypeId)
+        {
+            List<CodeName<long, string>> bulls = default(List<CodeName<long, string>>);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bulls = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"Select BullMasterId Code, BullNo [Name] 
+                    From BullMaster where IsActive=@act and Species=@typeId order by BullNo",
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                      new Parameter("typeId", System.Data.DbType.Int32, TypeId));
+            }
+
+            if (bulls?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bulls
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+        }
+        
+        public ApiResponse FillBullInAI(int SexSemenId)
+        {
+            List<CodeName<long, string>> bullList = default(List<CodeName<long, string>>);
+            string whereClause = "";
+            if (SexSemenId != 0)
+            {
+                int SexSemenYesNoFlag = SexSemenId == 93 ? 1 : 0;
+                whereClause = "where bm.IsSexedSemen=" + SexSemenYesNoFlag + "";
+            }
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bullList = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"select distinct bm.BullMasterId as Code,bm.BullNo as Name from BullMaster as bm inner join AICall as ac on
+                        bm.BullMasterId = ac.BullMasterId and bm.IsActive=1 and ac.IsActive=1 " + whereClause + " ");
+            }
+
+            if (bullList?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bullList
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+
+        }
+
+        public ApiResponse FillBullInPd(int SexSemenId)
+        {
+            List<CodeName<long, string>> bullList = default(List<CodeName<long, string>>);
+            string whereClause = "";
+            if (SexSemenId != 0)
+            {
+                int SexSemenYesNoFlag = SexSemenId == 93 ? 1 : 0;
+                whereClause = "where bm.IsSexedSemen=" + SexSemenYesNoFlag + "";
+            }
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bullList = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"select distinct bm.BullMasterId as Code,bm.BullNo as Name from 
+                    BullMaster as bm inner join AICall as ac on bm.BullMasterId = ac.BullMasterId 
+                    right join Pdentry as pe on pe.AIWorkerMasterId = ac.AIWorkerMasterId  and pe.AICallId = ac.AICallId
+                    and bm.IsActive=1 and ac.IsActive=1 and pe.IsActive=1 " + whereClause + "");
+            }
+
+            if (bullList?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bullList
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+
+        }
+
+        public ApiResponse FillBullInPdSP(int SexSemenId)
+        {
+            List<BullFilterModel> bullList = new List<BullFilterModel>();
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullFilter = new Repository<BullFilterModel>(connection);
+                var BullMasterModelObj = new List<BullFilterModel>();
+
+                IList<SqlParameter> sqlParameters = new List<SqlParameter>();
+                SqlParameter parameter;
+                DataTable dt = new DataTable();
+
+                parameter = new SqlParameter("@IsSexedSemen", SqlDbType.Int);
+                if (SexSemenId != 0)
+                {
+
+                    int SexSemenYesNoFlag = SexSemenId == 93 ? 1 : 0;
+                    parameter.Value = SexSemenYesNoFlag;
+                }
+                else
+                {
+                    parameter.Value = -1;
+                }
+                sqlParameters.Add(parameter);
+
+                BullMasterModelObj = _repoBullFilter.ExecuteStoredProcedure("SP_FillBull", sqlParameters).ToList();
+                bullList = BullMasterModelObj;
+            }
+
+            if (bullList?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bullList
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+
+        }
+
+        public ApiResponse FillBullInCalving(int SexSemenId)
+        {
+            List<CodeName<long, string>> bullList = default(List<CodeName<long, string>>);
+            string whereClause = "";
+            if (SexSemenId != 0)
+            {
+                int SexSemenYesNoFlag = SexSemenId == 93 ? 1 : 0;
+                whereClause = "where bm.IsSexedSemen=" + SexSemenYesNoFlag + "";
+            }
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bullList = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"select distinct bm.BullMasterId as Code,bm.BullNo as Name
+                        from  BullMaster as bm with(nolock)
+                        inner join AICall as ac with(nolock) on bm.BullMasterId = ac.BullMasterId 
+                        right join Pdentry as pe with(nolock) on pe.AIWorkerMasterId = ac.AIWorkerMasterId  and pe.AICallId = ac.AICallId
+                        inner join Calving as cl with(nolock) on cl.pdEntryId=pe.pdEntryId and cl.isActive=1 and cl.AiworkerMasterId=ac.AiworkerMasterId
+                        and bm.IsActive=1 and  ac.IsActive=1 and pe.IsActive=1 " + whereClause + "");
+            }
+
+            if (bullList?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bullList
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+
+        }
+
+        public byte[] ExportData(bool isExpired, string sortBy, string searchBy, string name)
+            => DataToExport<BullExportModel, BullMasterModel>(
+                $@"select ss.Name as SemenStation,bm.BullNo,format(bm.BirthDate,'dd/MM/yyyy')BirthDate,b.Name as BullBreed,format(bm.SemenProductionDate,'dd/MM/yyyy')SemenProductionDate,
+                isnull(lvc.LookupValue,'')Species,isnull(lc.LookupValue,'')PTflag,bm.SetNo,bm.DamNo,bm.DamLactInKGS,bm.FAT,bm.DamsDamsLactInKGS,bm.SireNo,
+                bm.SireDamsLactinKGS,bm.BullBirthPlace,bm.BreedingValue,bm.Remarks,(CASE WHEN bm.IsSexedSemen = 1 THEN 'Yes' ELSE 'No' END) AS IsSexedSemen
+                from BullMaster bm with(nolock)
+                left outer join LookupValues lvc with(nolock) on lvc.LookupValuesId=bm.Species
+                left outer join Semenstation ss with(nolock) on ss.SemenStationId=BM.SemenStationId and ss.IsActive=@act
+                left outer join BreedMaster b with(nolock) on b.BreedMAsterId=BM.BreedMasterId and b.IsActive=@act
+                left outer join LookupValues lc with(nolock) on lc.LookupValuesId=bm.PTflag
+                where bm.IsActive=@act
+                {(isExpired ? " and BM.ExpiryDate<getdate()" : " and isnull(BM.ExpiryDate,getdate())>=getdate()")}
+            {(string.IsNullOrWhiteSpace(searchBy) ? "" : @"and (bm.BullNo like concat('%',@srcBy,'%') or b.BullBreed like concat('%',@srcBy,'%') or
+                	lvc.LookupValue like concat('%',@srcBy,'%') or lc.LookupValue like concat('%',@srcBy,'%'))")}
+                order by {(string.IsNullOrWhiteSpace(sortBy) ? "BullNo" : sortBy)}",
+                new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                new Parameter("srcBy", System.Data.DbType.AnsiString, searchBy))
+            .ToExcel(name);
+
+
+        public ApiResponse BullWiseReport(Pagination pagination, BullWiseReportFilterModel reportFilter)
+        {
+            pagination.SortBy = string.IsNullOrWhiteSpace(pagination.SortBy) ? "Bull No desc" : pagination.SortBy.Trim();
+            return ReportResponse(() => GetReport(reportFilter, pagination), "Bull Wise Data not found");
+
+        }
+        private ApiResponse ReportResponse<TReport>(Func<Pagination<TReport>> data, string nodatamessage)
+        {
+            ApiResponse response = default(ApiResponse);
+            Pagination<TReport> pgData = data();
+            if (null == pgData?.Data || 0 >= pgData?.Data.Count())
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = nodatamessage
+                };
+            else
+                response = new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = pgData
+                };
+            return response;
+        }
+
+        private Pagination<BullWiseReportModel> GetReport(BullWiseReportFilterModel reportFilter,
+         Pagination pagination = default(Pagination), string sortBy = default(string))
+        {
+            Pagination<BullWiseReportModel> pgData;
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+            
+                _repoBullWiseReportModel = new Repository<BullWiseReportModel>(connection);
+
+                var BullWiseModelObj = new List<BullWiseReportModel>();
+
+                IList<SqlParameter> sqlParameters = new List<SqlParameter>();
+                SqlParameter parameter;
+                DataTable dt = new DataTable();
+
+                dt.Columns.Add("ID", typeof(string));
+                foreach (var id in reportFilter.SocietyCodes)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@SocietyCodes", SqlDbType.Structured);
+                parameter.TypeName = "dbo.StringList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+                dt = new DataTable();
+                dt.Columns.Add("ID", typeof(int));
+                foreach (var id in reportFilter.AIWorkerMasterIds)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@AIWorkerIDs", SqlDbType.Structured);
+                parameter.TypeName = "dbo.IntList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@FromDate", SqlDbType.DateTime);
+                parameter.Value = reportFilter.FromDate;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@ToDate", SqlDbType.DateTime);
+                parameter.Value = reportFilter.ToDate.AddDays(1).AddMilliseconds(-2);
+                sqlParameters.Add(parameter);
+
+
+                parameter = new SqlParameter("@IsSexedSemen", SqlDbType.Int);
+                if(reportFilter.OptionYesNo.ToString() == "Yes")
+                {
+                    parameter.Value = 1;
+                }
+                else if(reportFilter.OptionYesNo.ToString() == "No")
+                {
+                    parameter.Value = 0;
+                }
+                else
+                {
+                    parameter.Value = -1;
+                }
+              
+                sqlParameters.Add(parameter);
+
+                dt = new DataTable();
+                dt.Columns.Add("ID", typeof(int));
+                foreach (var id in reportFilter.BullMasterIds)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@BullMasterIDs", SqlDbType.Structured);
+                parameter.TypeName = "dbo.IntList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+         
+
+                parameter = new SqlParameter("@uTyp", SqlDbType.Int);
+                parameter.Value = (int)Enums.UserType.AIWorker;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@AiType", SqlDbType.Int);
+                
+                if(reportFilter.NoOfAI.Equals(Enums.NoOfAI.FirstAI))
+                {
+                    parameter.Value =42;
+                }
+                else if (reportFilter.NoOfAI.Equals(Enums.NoOfAI.HrRepeat24))
+                {
+                    parameter.Value = 43;
+                }
+                else if (reportFilter.NoOfAI.Equals(Enums.NoOfAI.RepeatAI))
+                {
+                    parameter.Value = 44;
+                }
+                else
+                {
+                    parameter.Value = 0;
+
+                }
+                // parameter.Value = (int)reportFilter.NoOfAI;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@PdStatus", SqlDbType.Int);
+                if (reportFilter.PdStatus.Equals(Enums.PDStatus.Pregnant))
+                {
+                    parameter.Value = 57;
+                }
+                else if (reportFilter.PdStatus.Equals(Enums.PDStatus.Empty))
+                {
+                    parameter.Value = 58;
+                }
+                else
+                {
+                    parameter.Value = 0;
+
+                }
+                //parameter.Value = (int)reportFilter.PdStatus;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@uid", SqlDbType.Int);
+                parameter.Value = _currentUser?.Info?.Id;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@roleid", SqlDbType.Int);
+                parameter.Value = _currentUser?.Info?.RoleId;
+                sqlParameters.Add(parameter);
+
+
+                BullWiseModelObj = _repoBullWiseReportModel.ExecuteStoredProcedure("SP_BullWiseReportData", sqlParameters).ToList();
+
+                pgData = new Pagination<BullWiseReportModel>()
+                {
+
+                    Data = BullWiseModelObj.Skip((pagination.PageNo - 1) * pagination.RecordsPerPage).Take(pagination.RecordsPerPage),
+                    PageNo = pagination.PageNo,
+                    RecordsPerPage = pagination.RecordsPerPage,
+                    SortBy = pagination.SortBy,
+                    TotalRecords = BullWiseModelObj.Count()
+                };
+                pgData.TotalPage = pgData.TotalRecords.TotalPages(pagination.RecordsPerPage);
+            }
+            return pgData;
+        }
+
+        public byte[] BullWiseReportExport(string sortBy, BullWiseReportFilterModel reportFilter, string name)
+        {
+            ApiResponse result = ExportReport(sortBy, reportFilter);
+            List<BullWiseReportModel> reportModels = new List<BullWiseReportModel>();
+            if (result.Data != null)
+            {
+                reportModels = (List<BullWiseReportModel>)result.Data;
+
+            }
+
+            var data = reportModels.ToList().Select(e => new
+            {
+                e.BullNo,
+                e.SocietyCode,
+                e.SocietyName,
+                e.AiWorker,
+                e.FirstAI,
+                e.HrsRepeatAI,
+                e.RepeatAI,
+                e.TotalSemenDoseUsed,
+                e.TotalAI,
+                e.PdExamined,
+                e.PdAnimal,
+                e.FirstAIPregnant,
+                e.FirstAIEmpty,
+                e.HrsRepeatAIPregnant,
+                e.HrsRepeatAIEmpty,
+                e.RepeatAIPregnant,
+                e.RepeatAIEmpty,
+                e.ConceptionRate,
+                e.PregnantRate,
+                e.TotalCalving,
+                e.Male,
+                e.Female
+            });
+
+
+            #region Export Exl
+            FileInfo file = new FileInfo(Path.Combine(name));
+            using (ExcelPackage package = new ExcelPackage(file))
+            {
+                ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("Bull Wise Report");
+
+                int Cell = 2;
+                //No of Ai Done,Pd Examine,Pd Animal
+                worksheet.Cells["E1:K1"].Merge = true;
+                worksheet.Cells["L1:M1"].Merge = true;
+                worksheet.Cells["N1:O1"].Merge = true;
+                worksheet.Cells["P1:Q1"].Merge = true;
+
+                //Merge Column Assign Blank
+                worksheet.Cells[1, 1].Value = "";
+                worksheet.Cells[1, 2].Value = "";
+                worksheet.Cells[1, 3].Value = "";
+                worksheet.Cells[1, 4].Value = "";
+               
+                //No of Ai Done Header
+                worksheet.Cells[1, 5].Value = "No Of AI Done";
+                worksheet.Cells[1, 5].Style.Font.Bold = true;
+                worksheet.Cells[1, 5].Style.Font.Size = 12;
+                worksheet.Cells[1, 5].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 5].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 5].Style.Fill.BackgroundColor.SetColor(Color.White);
+                worksheet.Cells[1, 5].Style.Font.Color.SetColor(Color.Black);
+                //First AI PD Status
+                worksheet.Cells[1, 12].Value = "First AI PD Status";
+                worksheet.Cells[1, 12].Style.Font.Bold = true;
+                worksheet.Cells[1, 12].Style.Font.Size = 12;
+                worksheet.Cells[1, 12].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 12].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 12].Style.Fill.BackgroundColor.SetColor(Color.White);
+                worksheet.Cells[1, 12].Style.Font.Color.SetColor(Color.Black);
+                //First AI PD Status
+                worksheet.Cells[1, 14].Value = "24 Hrs Repeat AI PD Status";
+                worksheet.Cells[1, 14].Style.Font.Bold = true;
+                worksheet.Cells[1, 14].Style.Font.Size = 12;
+                worksheet.Cells[1, 14].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 14].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 14].Style.Fill.BackgroundColor.SetColor(Color.White);
+                worksheet.Cells[1, 14].Style.Font.Color.SetColor(Color.Black);
+                //First AI PD Status
+                worksheet.Cells[1, 16].Value = "Repeat AI PD Status";
+                worksheet.Cells[1, 16].Style.Font.Bold = true;
+                worksheet.Cells[1, 16].Style.Font.Size = 12;
+                worksheet.Cells[1, 16].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                worksheet.Cells[1, 16].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                worksheet.Cells[1, 16].Style.Fill.BackgroundColor.SetColor(Color.White);
+                worksheet.Cells[1, 16].Style.Font.Color.SetColor(Color.Black);
+                //worksheet.Cells.LoadFromCollection(data, true);
+                worksheet.Cells[Cell, 1].Value = "Bull No";
+                worksheet.Cells[Cell, 2].Value = "Society Code";
+                worksheet.Cells[Cell, 3].Value = "Society Name";
+                worksheet.Cells[Cell, 4].Value = "AI Worker";
+                worksheet.Cells[Cell, 5].Value = "First AI";
+                worksheet.Cells[Cell, 6].Value = "24 Hrs Repeat AI";
+                worksheet.Cells[Cell, 7].Value = "Repeat AI";
+                worksheet.Cells[Cell, 8].Value = "Total Semen Dose Used";
+                worksheet.Cells[Cell, 9].Value = "Total AI";
+                worksheet.Cells[Cell, 10].Value = "PD Examined";
+                worksheet.Cells[Cell, 11].Value = "No of AI Done For PD Examined Animals";
+                worksheet.Cells[Cell, 12].Value = "Pregnant";
+                worksheet.Cells[Cell, 13].Value = "Empty";
+                worksheet.Cells[Cell, 14].Value = "Pregnant";
+                worksheet.Cells[Cell, 15].Value = "Empty";
+                worksheet.Cells[Cell, 16].Value = "Pregnant";
+                worksheet.Cells[Cell, 17].Value = "Empty";
+                worksheet.Cells[Cell, 18].Value = "No of Pregnant Animal CR %";
+                worksheet.Cells[Cell, 19].Value = "PR ( Pregnancy Rate) PR %";
+                worksheet.Cells[Cell, 20].Value = "Total Calving";
+                worksheet.Cells[Cell, 21].Value = "Male";
+                worksheet.Cells[Cell, 22].Value = "Female";
+
+                for (int index = 2; index <= reportModels.Count + 1; index++)
+                {
+
+                    worksheet.Cells[index + 1, 1].Value = reportModels[index - 2].BullNo;
+                    worksheet.Cells[index + 1, 2].Value = reportModels[index - 2].SocietyCode;
+                    worksheet.Cells[index + 1, 3].Value = reportModels[index - 2].SocietyName;
+                    worksheet.Cells[index + 1, 4].Value = reportModels[index - 2].AiWorker;
+                    worksheet.Cells[index + 1, 5].Value = reportModels[index - 2].FirstAI;
+                    worksheet.Cells[index + 1, 6].Value = reportModels[index - 2].HrsRepeatAI;
+                    worksheet.Cells[index + 1, 7].Value = reportModels[index - 2].RepeatAI;
+                    worksheet.Cells[index + 1, 8].Value = reportModels[index - 2].TotalSemenDoseUsed;
+                    worksheet.Cells[index + 1, 9].Value = reportModels[index - 2].TotalAI;
+                    worksheet.Cells[index + 1, 10].Value = reportModels[index - 2].PdExamined;
+                    worksheet.Cells[index + 1, 11].Value = reportModels[index - 2].PdAnimal;
+                    worksheet.Cells[index + 1, 12].Value = reportModels[index - 2].FirstAIPregnant;
+                    worksheet.Cells[index + 1, 13].Value = reportModels[index - 2].FirstAIEmpty;
+                    worksheet.Cells[index + 1, 14].Value = reportModels[index - 2].HrsRepeatAIPregnant;
+                    worksheet.Cells[index + 1, 15].Value = reportModels[index - 2].HrsRepeatAIEmpty;
+                    worksheet.Cells[index + 1, 16].Value = reportModels[index - 2].RepeatAIPregnant;
+                    worksheet.Cells[index + 1, 17].Value = reportModels[index - 2].RepeatAIEmpty;
+                    worksheet.Cells[index + 1, 18].Value = reportModels[index - 2].ConceptionRate;
+                    worksheet.Cells[index + 1, 19].Value = reportModels[index - 2].PregnantRate;
+                    worksheet.Cells[index + 1, 20].Value = reportModels[index - 2].TotalCalving;
+                    worksheet.Cells[index + 1, 21].Value = reportModels[index - 2].Male;
+                    worksheet.Cells[index + 1, 22].Value = reportModels[index - 2].Female;
+                   
+                }
+                worksheet.Cells[worksheet.Cells.Address].AutoFitColumns();
+
+                var range = worksheet.Cells[1, 1, data.Count() + 2, 22];
+                range.Style.Border.Top.Style = range.Style.Border.Bottom.Style
+                = range.Style.Border.Left.Style = range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+                return package.GetAsByteArray();
+            }
+            #endregion Export Exl
+        }
+
+        public ApiResponse ExportReport(string sortBy, BullWiseReportFilterModel reportFilter)
+        {
+            ApiResponse apiResponse = new ApiResponse();
+            List<BullWiseReportModel> result = new List<BullWiseReportModel>();
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repoBullWiseReportModel = new Repository<BullWiseReportModel>(connection);
+
+                var BullWiseModelObj = new List<BullWiseReportModel>();
+
+                IList<SqlParameter> sqlParameters = new List<SqlParameter>();
+                SqlParameter parameter;
+                DataTable dt = new DataTable();
+
+                dt.Columns.Add("ID", typeof(string));
+                foreach (var id in reportFilter.SocietyCodes)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@SocietyCodes", SqlDbType.Structured);
+                parameter.TypeName = "dbo.StringList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+                dt = new DataTable();
+                dt.Columns.Add("ID", typeof(int));
+                foreach (var id in reportFilter.AIWorkerMasterIds)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@AIWorkerIDs", SqlDbType.Structured);
+                parameter.TypeName = "dbo.IntList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@FromDate", SqlDbType.DateTime);
+                parameter.Value = reportFilter.FromDate;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@ToDate", SqlDbType.DateTime);
+                parameter.Value = reportFilter.ToDate.AddDays(1).AddMilliseconds(-2);
+                sqlParameters.Add(parameter);
+
+
+                parameter = new SqlParameter("@IsSexedSemen", SqlDbType.Int);
+                if (reportFilter.OptionYesNo.ToString() == "Yes")
+                {
+                    parameter.Value = 1;
+                }
+                else if (reportFilter.OptionYesNo.ToString() == "No")
+                {
+                    parameter.Value = 0;
+                }
+                else
+                {
+                    parameter.Value = -1;
+                }
+
+                sqlParameters.Add(parameter);
+
+                dt = new DataTable();
+                dt.Columns.Add("ID", typeof(int));
+                foreach (var id in reportFilter.BullMasterIds)
+                {
+                    dt.Rows.Add(id);
+                }
+                parameter = new SqlParameter("@BullMasterIDs", SqlDbType.Structured);
+                parameter.TypeName = "dbo.IntList";
+                parameter.Value = dt;
+                sqlParameters.Add(parameter);
+
+
+
+                parameter = new SqlParameter("@uTyp", SqlDbType.Int);
+                parameter.Value = (int)Enums.UserType.AIWorker;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@AiType", SqlDbType.Int);
+
+                if (reportFilter.NoOfAI.Equals(Enums.NoOfAI.FirstAI))
+                {
+                    parameter.Value = 42;
+                }
+                else if (reportFilter.NoOfAI.Equals(Enums.NoOfAI.HrRepeat24))
+                {
+                    parameter.Value = 43;
+                }
+                else if (reportFilter.NoOfAI.Equals(Enums.NoOfAI.RepeatAI))
+                {
+                    parameter.Value = 44;
+                }
+                else
+                {
+                    parameter.Value = 0;
+
+                }
+                // parameter.Value = (int)reportFilter.NoOfAI;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@PdStatus", SqlDbType.Int);
+                if (reportFilter.PdStatus.Equals(Enums.PDStatus.Pregnant))
+                {
+                    parameter.Value = 57;
+                }
+                else if (reportFilter.PdStatus.Equals(Enums.PDStatus.Empty))
+                {
+                    parameter.Value = 58;
+                }
+                else
+                {
+                    parameter.Value = 0;
+
+                }
+                //parameter.Value = (int)reportFilter.PdStatus;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@uid", SqlDbType.Int);
+                parameter.Value = _currentUser?.Info?.Id;
+                sqlParameters.Add(parameter);
+
+                parameter = new SqlParameter("@roleid", SqlDbType.Int);
+                parameter.Value = _currentUser?.Info?.RoleId;
+                sqlParameters.Add(parameter);
+
+
+                BullWiseModelObj = _repoBullWiseReportModel.ExecuteStoredProcedure("SP_BullWiseReportData", sqlParameters).ToList();
+                result = BullWiseModelObj;
+                apiResponse = new ApiResponse() { Data = result, StatusCode = result.Any() ? StatusCodes.Status200OK : StatusCodes.Status204NoContent };
+
+            }
+            return apiResponse;
+
+        }
+
+
+        #region Active bull ddl
+        public ApiResponse FillActiveBull(int TypeId)
+        {
+            List<CodeName<long, string>> bulls = default(List<CodeName<long, string>>);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bulls = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"Select BullMasterId Code, BullNo [Name] 
+                    From BullMaster where IsActive=@act and isnull(ExpiryDate,getdate())>=getdate() and Species=@typeId order by BullNo",
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                      new Parameter("typeId", System.Data.DbType.Int32, TypeId));
+            }
+
+            if (bulls?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bulls
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+        }
+
+        public ApiResponse FillActiveBull(int TypeId, string keyword)
+        {
+            List<CodeName<long, string>> bulls = default(List<CodeName<long, string>>);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                bulls = new Repository<BullMasterModel>(connection)
+                    .Query<CodeName<long, string>, BullMasterModel>(
+                    @"Select BullMasterId Code, BullNo [Name] 
+                    From BullMaster where IsActive=@act and (@typeId = 0 or Species=@typeId) and BullNo like concat('%',@keyword,'%') order by BullNo",
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                      new Parameter("typeId", System.Data.DbType.Int32, TypeId),
+                      new Parameter("keyword", System.Data.DbType.String, keyword));
+            }
+
+            if (bulls?.Any() ?? false)
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = bulls
+                };
+            else
+                return new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status204NoContent,
+                    Message = "No Bull Found"
+                };
+        }
+
+        public object Add(UserModel userModel)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+    }
+}
+using AI.Models;
+using AI.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Prompt.Infrastructure;
+using System;
+
+namespace AI.Web.Controllers.V1
+{
+    [Route("[controller]")]
+    [ApiController, ApiVersion("1.0"), Platform]
+    //[MiddlewareFilter(typeof(AIHMACAuthenticate))]
+    public class BullMasterController : BaseController
+    {
+        public BullMasterController(IBullMaster _bullMaster)
+        {
+            BullMaster = _bullMaster;
+        }
+
+        /// <summary>
+        /// Get All Bull Master With Pagination 
+        /// </summary>
+        /// <param name="pageNo"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="searchBy"></param>
+        /// <param name="isExpired"></param>
+        /// <response code="404">
+        /// NotFound:
+        ///
+        ///     {
+        ///        "statusCode": 404,
+        ///        "message": "No Record Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": {
+        ///            "data": [
+        ///              {
+        ///             "bullMasterId": 552,
+        ///             "semenStation": "SAG",
+        ///             "bullNo": "MR-40165",
+        ///             "bullBreed": "Murrah",
+        ///             "species": "8",
+        ///             "pTflag": "",
+        ///             "setNo": "",
+        ///             "damNo": "",
+        ///             "damLactInKGS": "",
+        ///             "fat": 0,
+        ///             "damsDamsLactInKGS": "",
+        ///             "sireNo": "",
+        ///             "bullBirthPlace": "",
+        ///             "breedingValue": "",
+        ///             "createdOn": "01/01/0001 12:00 AM",
+        ///             "updatedOn": "01/01/0001 12:00 AM",
+        ///             "isActive": false,
+        ///             "versionNo": 1
+        ///              }
+        ///            ],
+        ///            "pageNo": 1,
+        ///            "recordsPerPage": 5,
+        ///            "totalPage": 1,
+        ///            "sortBy": "bullMasterId  DESC"
+        ///          }
+        ///     }
+        /// </response>
+        [HttpGet("{pageNo:int}/{pageSize:int}/{isExpired:bool}")]
+        [HttpGet("{pageNo:int}/{pageSize:int}/{isExpired:bool}/{sortBy}")]
+        [HttpGet("{pageNo:int}/{pageSize:int}/{isExpired:bool}/{sortBy}/{searchBy}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetAll(int pageNo, int pageSize, bool isExpired, string sortBy, string searchBy)
+        {
+            if (InvalidPagination(pageNo, pageSize, out ApiResponse response))
+                return Ok(response);
+
+            return Ok(BullMaster.GetAll(new Pagination
+            {
+                PageNo = pageNo,
+                RecordsPerPage = pageSize,
+                SortBy = sortBy
+            }, searchBy, isExpired));
+        }
+
+        /// <summary>
+        /// Get Bull Master List By Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///      {
+        ///         "statusCode": 200,
+        ///         "message": "Success",
+        ///         "data": [{ 
+        ///                 "bullMasterId": 552,
+        ///                 "semenStation": "SAG",
+        ///                 "bullNo": "MR-40165",
+        ///                 "bullBreed": "Murrah",
+        ///                 "species": "8",
+        ///                 "pTflag": "",
+        ///                 "setNo": "",
+        ///                 "damNo": "",
+        ///                 "damLactInKGS": "",
+        ///                 "fat": 0,
+        ///                 "damsDamsLactInKGS": "",
+        ///                 "sireNo": "",
+        ///                 "bullBirthPlace": "",
+        ///                 "breedingValue": "",
+        ///                 "createdOn": "01/01/0001 12:00 AM",
+        ///                 "updatedOn": "01/01/0001 12:00 AM",
+        ///                 "isActive": false,
+        ///                 "versionNo": 1,
+        ///                 "remarks":"test",
+        ///         }]
+        ///     }
+        /// </response>
+        /// <response code="404">
+        /// Returns:
+        ///
+        ///     {
+        ///        "StatusCode": 404,
+        ///        "Message": "Record Not Found",
+        ///        "Data": null
+        ///     }
+        ///
+        /// </response>
+        /// <response code="400">
+        /// Returns:
+        ///
+        ///     {
+        ///        "StatusCode": 400,
+        ///        "Message": "Invalid Id received",
+        ///        "Data": null
+        ///     }
+        ///
+        /// </response>
+        [HttpGet("{id:long}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetById(long id)
+        {
+            if (id == default(long))
+                return Ok(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = $"Invalid {nameof(id)} received"
+                });
+
+            return Ok(BullMaster.GetById(id));
+        }
+
+        /// <summary>
+        ///  Add Bull Master
+        /// </summary>
+        /// <param name="bullModel"></param>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST api/BullMaster
+        ///     
+        ///         {
+        ///         "semenStation": "SAG",
+        ///         "bullNo": "MR-40164",
+        ///         "birthDate": "",
+        ///         "bullBreed": "Murrah",
+        ///         "semenProductionDate": "",
+        ///         "species": 8,
+        ///         "pTflag": "",
+        ///         "setNo": "",
+        ///         "damNo": "340020850787",
+        ///         "damLactInKGS": "5098.4",
+        ///         "fAt": 7.20,
+        ///         "damsDamsLactInKgs": "",
+        ///         "sireNo": "340077526043",
+        ///         "sireDamsLactinKgs": "4100",
+        ///         "bullBirthPlace": "SAG",
+        ///         "breedingValue": ""
+        ///         }
+        /// </remarks>
+        /// <response code="400">
+        /// BadRequest:
+        ///
+        ///     {
+        ///        "statusCode": 400,
+        ///        "message": "something went wrong"
+        ///     }
+        /// </response>
+        /// <response code="409">
+        /// Conflict:
+        ///
+        ///     {
+        ///        "statusCode": 409,
+        ///        "message": "Bull No Already Exists",
+        ///        "Data": null
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///         "statusCode": 200,
+        ///         "message": "Record added successfully",
+        ///         "data": {
+        ///             "bullMasterId": 552,
+        ///             "semenStation": "1",
+        ///             "bullNo": "MR-40164",
+        ///             "bullBreed": "7",
+        ///             "species": "8",
+        ///             "pTflag": "",
+        ///             "setNo": "",
+        ///             "damNo": "340020850787",
+        ///             "damLactInKGS": "5098.4",
+        ///             "fat": 7.2,
+        ///             "damsDamsLactInKGS": "",
+        ///             "sireNo": "340077526043",
+        ///             "bullBirthPlace": "SAG",
+        ///             "breedingValue": "",
+        ///             "createdOn": "01/01/0001 12:00 AM",
+        ///             "updatedOn": "01/01/0001 12:00 AM",
+        ///             "isActive": true,
+        ///             "createdBy": 2,
+        ///             "remarks":"test",
+        ///             "versionNo": 1
+        ///      }
+        /// </response>
+        /// 
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public IActionResult Add([FromBody] BullMasterModel bullModel)
+        {
+            if (InvalidModel(out ApiResponse response))
+                return Ok(response);
+
+            return Ok(BullMaster.Add(bullModel));
+        }
+
+        /// <summary>
+        ///  Update Bull Master
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="bullModel"></param>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET api/BullMaster/Update/1
+        ///     
+        ///         {
+        ///         "bullMasterId": 552,
+        ///         "semenStation": "1",
+        ///         "bullNo": "MR-40165",
+        ///         "birthDate": "",
+        ///         "bullBreed": "7",
+        ///         "semenProductionDate": "",
+        ///         "species": "8",
+        ///         "pTflag": "",
+        ///         "setNo": "",
+        ///         "damNo": "",
+        ///         "damLactInKGS": "",
+        ///         "fat": 0,
+        ///         "damsDamsLactInKGS": "",
+        ///         "sireNo": "",
+        ///         "bullBirthPlace": "",
+        ///         "breedingValue": "",
+        ///             "remarks":"test",
+        ///         }
+        /// </remarks>
+        /// <param></param>
+        /// <response code="400">
+        /// BadRequest::
+        ///
+        ///     {
+        ///        "statusCode": 400,
+        ///        "message": "something went wrong"
+        ///     }
+        /// </response>
+        /// <response code="409">
+        /// Conflict:
+        ///
+        ///     {
+        ///        "statusCode": 409,
+        ///        "message": "Bull No Already Exists",
+        ///        "Data": null
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///        "statusCode": 200,
+        ///        "message": "Record updated successfully",
+        ///        "data": {
+        ///                 "bullMasterId": 552,
+        ///                 "semenStation": "1",
+        ///                 "bullNo": "MR-40165",
+        ///                 "bullBreed": "7",
+        ///                 "species": "8",
+        ///                 "pTflag": "",
+        ///                 "setNo": "",
+        ///                 "damNo": "",
+        ///                 "damLactInKGS": "",
+        ///                 "fat": 0,
+        ///                 "damsDamsLactInKGS": "",
+        ///                 "sireNo": "",
+        ///                 "bullBirthPlace": "",
+        ///                 "breedingValue": "",
+        ///                 "createdOn": "01/01/0001 12:00 AM",
+        ///                 "updatedOn": "01/01/0001 12:00 AM",
+        ///                 "isActive": false,
+        ///                 "remarks":"test",
+        ///                 "versionNo": 1
+        ///     }
+        /// </response>
+        /// 
+        [HttpPut("{id:long}")]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public IActionResult Update(long id, [FromBody] BullMasterModel bullModel)
+        {
+            if (InvalidModel(out ApiResponse response))
+                return Ok(response);
+
+            return Ok(BullMaster.Update(id, bullModel));
+        }
+
+        /// <summary>
+        /// Delete Bull Master
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     DELETE /api/BullMaster
+        ///   
+        /// </remarks>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <response code="409">
+        /// Data Conflict:
+        ///
+        ///     {
+        ///        "statusCode": 409,
+        ///        "message": "Bull Being Used in Other Data"
+        ///     }
+        /// 
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///        "statusCode": 200,
+        ///        "message": "Success",
+        ///        "data": null
+        ///			  
+        ///     }
+        /// 
+        /// </response>
+        /// <response code="400">
+        /// Returns:
+        ///
+        ///     {
+        ///        "StatusCode": 400,
+        ///        "Message": "Invalid Id received",
+        ///        "Data": null
+        ///     }
+        ///
+        /// </response>
+        [HttpDelete("{id:long}")]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult Delete(long id)
+            => Ok(BullMaster.Delete(id));
+
+        /// <summary>
+        /// Export Bull Master Data with filter and sorting
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET api/BullMaster/Export
+        ///
+        /// </remarks>
+        /// <param name="sortBy"></param>
+        /// <param name="searchBy"></param>
+        /// <response code="404">
+        /// NotFound:
+        ///
+        ///     {
+        ///        "statusCode": 404,
+        ///        "message": "No Data Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": application/vnd.openxmlformatsofficedocument.spreadsheetml.sheet
+        ///     }
+        /// </response>
+        [HttpGet("[action]/{isExpired:bool}/{sortBy}")]
+        [HttpGet("[action]/{isExpired:bool}/{sortBy}/{searchBy}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Export(bool isExpired, string sortBy, string searchBy)
+            => Export("Bull", () => BullMaster.ExportData(isExpired, sortBy, searchBy, "Bull"));
+
+        /// <summary>
+        /// Get Bull List for dropdown fill
+        /// </summary>        
+        ///<response code = "204" >
+        /// NoContent:
+        ///
+        ///     {
+        ///        "statusCode": 204,
+        ///        "message": "No Bulls Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": [{
+        ///              "code": 3,
+        ///              "name": "BM-345"
+        ///            }]
+        ///     }
+        /// </response>
+        [HttpGet("[action]")]
+        [HttpGet("[action]/{TypeId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillBull(int TypeId)
+            => Ok(BullMaster.FillBull(TypeId));
+
+        [HttpPost("[Action]/Utilized/{SexSemenId:int}"), Platform]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillBullInAI(int SexSemenId)
+            => Ok(BullMaster.FillBullInAI(SexSemenId));
+
+        [HttpPost("[Action]/Utilized/{SexSemenId:int}"), Platform]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillBullInPd(int SexSemenId)
+            => Ok(BullMaster.FillBullInPd(SexSemenId));
+
+        [HttpPost("[Action]/{SexSemenId:int}"), Platform]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillBullInPdSP(int SexSemenId)
+          => Ok(BullMaster.FillBullInPdSP(SexSemenId));
+
+
+        [HttpPost("[Action]/Utilized/{SexSemenId:int}"), Platform]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillBullInCalving(int SexSemenId)
+           => Ok(BullMaster.FillBullInCalving(SexSemenId));
+
+        /// <summary>
+        /// Get Active Bull List for dropdown fill
+        /// </summary>        
+        ///<response code = "204" >
+        /// NoContent:
+        ///
+        ///     {
+        ///        "statusCode": 204,
+        ///        "message": "No Bulls Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": [{
+        ///              "code": 3,
+        ///              "name": "BM-345"
+        ///            }]
+        ///     }
+        /// </response>
+        [HttpGet("[action]")]
+        [HttpGet("[action]/{TypeId:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult FillActiveBull(int TypeId)
+            => Ok(BullMaster.FillActiveBull(TypeId));
+
+        [HttpGet("[action]")]
+        [HttpGet("[action]/{TypeId:int}/{keyword}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetByBullNo(int TypeId, string keyword)
+            => Ok(BullMaster.FillActiveBull(TypeId, keyword));
+
+
+
+        /// <summary>
+        ///  Get BullWiseReport with Pagination
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     GET api/BullMaster/Report/1/5
+        ///
+        /// </remarks>
+        /// <param name="reportFilter"></param>
+        /// <param name="pageNo"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="sortBy"></param>
+        /// <response code="404">
+        /// NotFound:
+        ///
+        ///     {
+        ///        "statusCode": 404,
+        ///        "message": "No Record Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": {
+        ///            "data": [
+        ///              {
+        ///                
+        ///              }
+        ///            ],
+        ///            "pageNo": 1,
+        ///            "recordsPerPage": 5,
+        ///            "totalPage": 1,
+        ///            "sortBy": "BullMasterId DESC"
+        ///          }
+        ///     }
+        /// </response>
+        [HttpPut("[action]/{pageNo:int}/{pageSize:int}")]
+        [HttpPut("[action]/{pageNo:int}/{pageSize:int}/{sortBy}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Report(int pageNo, int pageSize, string sortBy, [FromBody] BullWiseReportFilterModel reportFilter)
+            => Report(pageNo, pageSize,
+                () => BullMaster.BullWiseReport(new Pagination
+                {
+                    PageNo = pageNo,
+                    RecordsPerPage = pageSize,
+                    SortBy = sortBy
+                }, reportFilter));
+
+        /// <summary>
+        ///  Export BullWiseReport Report
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     Post /api/BullMaster/export/{sortBy}
+        ///
+        /// </remarks>
+        /// <param name="reportFilter"></param>
+        /// <response code="404">
+        /// NotFound:
+        ///
+        ///     {
+        ///        "statusCode": 404,
+        ///        "message": "No Record Found"
+        ///     }
+        /// </response>
+        /// <response code="200">
+        /// Returns:
+        ///
+        ///     {
+        ///          "statusCode": 200,
+        ///          "data": {
+        ///            "data": [{}],
+        ///            "pageNo": 1,
+        ///            "recordsPerPage": 5,
+        ///            "totalPage": 1,
+        ///            "sortBy": "AiWorker"
+        ///          }
+        ///     }
+        /// </response>
+        [HttpPost("[action]")]
+        [HttpPost("[action]/{sortBy}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Export(string sortBy, [FromBody] BullWiseReportFilterModel reportFilter)
+            => Export("BullWiseReport", () => BullMaster.BullWiseReportExport(
+                sortBy, reportFilter, "BullWiseReport"), true);
+        #region Private Methods
+        private OkObjectResult Report(int pageNo, int pageSize, Func<ApiResponse> service)
+        {
+            if (InvalidPagination(pageNo, pageSize, out ApiResponse response) ||
+                InvalidModel(out response))
+                return Ok(response);
+
+            return Ok(service());
+        }
+        #endregion
+    }
+}
+using AI.Models;
+using Prompt.Infrastructure;
+
+namespace AI.Services
+{
+    public interface IBullMaster
+    {
+        ApiResponse Add(BullMasterModel bullModel);
+        ApiResponse Update(long id, BullMasterModel bullModel);
+        ApiResponse GetById(long id);
+        ApiResponse Delete(long id);
+        ApiResponse GetAll(Pagination pagination, string searchBy, bool isExpired);
+        byte[] ExportData(bool isExpired, string sortBy, string searchBy, string name);
+        ApiResponse FillBull(int TypeId);
+        ApiResponse FillBullInAI(int SexSemenId);
+        ApiResponse FillBullInPd(int SexSemenId);
+        ApiResponse FillBullInPdSP(int SexSemenId);
+        ApiResponse FillBullInCalving(int SexSemenId);
+        ApiResponse FillActiveBull(int TypeId);
+        ApiResponse FillActiveBull(int TypeId, string keyword);
+        ApiResponse BullWiseReport(Pagination pagination, BullWiseReportFilterModel reportFilter);
+        byte[] BullWiseReportExport(string sortBy, BullWiseReportFilterModel reportFilter, string name);
+        object Add(UserModel userModel);
+    }
+}
