@@ -1,0 +1,301 @@
+using AI.Models;
+using AI.Services.User;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Prompt.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Vega;
+using static AI.Models.Enums;
+
+namespace AI.Services.CompanyMastertbl
+{
+
+    public class CompanyMastertbl : CommonService, ICompanyMastertbl
+    {
+        ApiResponse apiResponse;
+        public Repository<CompanyMastertblModel> _repocompanymastertbl { get; set; }
+        public Repository<CompanyUserModel> _repocompanyuser { get; set; }
+        public Repository<UserListModel> _repouserss { get; set; }
+        public CompanyMastertbl(IHttpContextAccessor httpContext, ICurrentUser currentUser) : base(httpContext, currentUser)
+        {
+        }
+        public ApiResponse Add(CompanyMastertblModel companyMastertblModel)
+        {
+            ApiResponse response = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymastertbl = new Repository<CompanyMastertblModel>(connection);
+                CompanyMastertblModel companyMastertbl1 = _repocompanymastertbl.ReadOne(companyMastertblModel.CompanyId);
+                if (_repocompanymastertbl.Exists(criteria: "CompanyId=@CompanyId", parameters: new { CompanyId = companyMastertblModel.CompanyId }))
+                {
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status409Conflict,
+                        Message = "already exist",
+                        Data = false
+                    };
+                }
+                else
+                {
+                    _repocompanymastertbl.BeginTransaction();
+                    _repocompanyuser = new Repository<CompanyUserModel>(_repocompanymastertbl.Transaction);
+                    CompanyUserModel data = companyMastertblModel.GetMapped<CompanyUserModel, CompanyMastertblModel>();
+
+                    try
+                    {
+                        _repocompanymastertbl.Add(companyMastertblModel);
+
+
+                        data.CompanyId = companyMastertblModel.CompanyId;
+
+                        data.userName = $"admin_{companyMastertblModel.CompanyName.Replace(" ", "")}";
+                        data.Password = "123456";
+                        data.Role = 1;
+                        data.CreatedBy = companyMastertblModel.CreatedBy;
+                        data.UpdatedBy = companyMastertblModel.UpdatedBy;
+                        data.CreatedOn = DateTime.Now;
+                        data.UpdatedOn = DateTime.Now;
+                        data.IsActive = true;
+
+                        _repocompanyuser.Add(data);
+                        _repocompanymastertbl.Commit();
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            Message = "data saved",
+                            Data = true
+                        };
+
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        _repocompanymastertbl.Rollback();
+                        response = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status400BadRequest,
+                            Message = "error"
+                        };
+                    }
+                }
+
+            }
+            return apiResponse;
+        }
+        public ApiResponse Delete(long id)
+        {
+
+            ApiResponse apiResponse = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymastertbl = new Repository<CompanyMastertblModel>(connection);
+                _repocompanyuser = new Repository<CompanyUserModel>(connection);
+                CompanyMastertblModel companymaster = _repocompanymastertbl.ReadOne(id);
+
+                if (companymaster != null && companymaster.IsActive)
+                {
+                    if (_repocompanyuser.Exists("CompanyId = @id and IsActive=@act",
+                        new
+                        {
+                            id = companymaster.CompanyId,
+                            act = RecordStatusEnum.Active
+                        }))
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status409Conflict,
+                            Message = string.Format("first delete user then company ", companymaster.CompanyId),
+                            Data = false
+                        };
+                    else
+                    {
+                        _repocompanymastertbl.Delete(id, _currentUser?.Info?.Id);
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            Message = "Record deleted successfully",
+                            Data = true
+                        };
+                    }
+                }
+                else
+                {
+                    apiResponse = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status204NoContent,
+                        Message = "Bull Not Found",
+                        Data = false
+                    };
+                }
+            }
+            return apiResponse;
+
+
+        }
+
+        public ApiResponse GetAll(Pagination pagination, string searchBy)
+        {
+            ApiResponse apiResponse = default(ApiResponse);
+            Pagination<CompanyMastertblModel> pgData;
+            pagination.SortBy = string.IsNullOrWhiteSpace(pagination.SortBy) ? "CompanyId desc" : pagination.SortBy.Trim();
+
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymastertbl = new Repository<CompanyMastertblModel>(connection);
+                string strQuery = @"select * from CompanyMastertbl where ISActive=@act";
+                if (!string.IsNullOrEmpty(searchBy))
+                    strQuery += @" AND CompanyName LIKE concat('%',@sby,'%')";
+
+                pgData = _repocompanymastertbl.Query<CompanyMastertblModel, CompanyMastertblModel>(strQuery, pagination.SortBy, pagination.PageNo, pagination.RecordsPerPage,
+                new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                new Parameter("sby", System.Data.DbType.AnsiString, searchBy));
+
+                if (null == pgData?.Data || 0 >= pgData?.Data.Count())
+                    apiResponse = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = "No Record Found",
+                        Data = pgData
+                    };
+                else
+                    apiResponse = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Data = pgData
+                    };
+            }
+            return apiResponse;
+        }
+        public ApiResponse GetById(long id)
+        {
+            ApiResponse response = default(ApiResponse);
+            UserListModel userlistmodel = new UserListModel();
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+
+                _repocompanyuser = new Repository<CompanyUserModel>(connection);
+                _repouserss = new Repository<UserListModel>(connection);
+                // List<UserListModel> result;
+                string strQuery = $@"select * from CompanyMastertbl  where CompanyId = @CompanyId AND IsActive = @act";
+
+
+                userlistmodel = _repouserss.Query<UserListModel, UserListModel>(strQuery,
+                    new Parameter("act", System.Data.DbType.Boolean, (int)RecordStatusEnum.Active),
+                    new Parameter("CompanyId", System.Data.DbType.Int64, id)).FirstOrDefault();
+
+                if (userlistmodel != null)
+                {
+                    List<CompanyUserModel> companyUserModels = _repocompanyuser.Query<CompanyUserModel, CompanyUserModel>(
+                    "select * from CompanyUser where CompanyId = @CompanyId",
+                    new Parameter("CompanyId", System.Data.DbType.Int64, id)
+
+                    );
+                    userlistmodel.Cmpuserlist = companyUserModels.ToList();
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Data = userlistmodel
+                    };
+
+                }
+                else
+                {
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = "No Record Found",
+                        Data = false
+                    };
+
+                }
+            }
+            return response;
+
+        }
+        public ApiResponse Update(long id,CompanyMastertblModel companyMastertblModel)
+        {
+            ApiResponse apiResponse = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymastertbl = new Repository<CompanyMastertblModel>(connection);
+                _repocompanyuser = new Repository<CompanyUserModel>(connection);
+                _repocompanymastertbl.BeginTransaction();
+                _repocompanyuser = new Repository<CompanyUserModel>(_repocompanymastertbl.Transaction);
+                try
+                {
+                    CompanyMastertblModel cmModel = _repocompanymastertbl.ReadOne(id);
+                    CompanyMasterModel compMaster = _repocompanymastertbl.ReadOne(criteria: "CompanyName=@cname", parameters: new { cname = companyMastertblModel.CompanyName });
+
+                    if (cmModel != null && cmModel.IsActive && compMaster == null)
+                    {
+
+                        if (cmModel.ExpDate <= companyMastertblModel.ExpDate)
+                        {
+                            if (cmModel.CompanyName != companyMastertblModel.CompanyName)
+                            {
+
+                                bool cm = _repocompanymastertbl.Update(companyMastertblModel);
+                                if (cm)
+                                {
+                                    CompanyUserModel user = new CompanyUserModel();
+                                    user = _repocompanyuser.ReadOne(criteria: "CompanyId=@id", parameters: new { id = companyMastertblModel.CompanyId });
+
+
+                                    user.userName = $"Admin_{companyMastertblModel.CompanyName.Replace(" ", "")}";
+                                    _repocompanyuser.Update(user);
+                                    _repocompanyuser.Commit();
+                                }
+                                apiResponse = new ApiResponse()
+                                {
+                                    Message = "updated successfully",
+                                    StatusCode = StatusCodes.Status200OK
+                                };
+                            }
+                            else
+                            {
+                                apiResponse = new ApiResponse()
+                                {
+                                    Message = "Name should be unique",
+                                    StatusCode = StatusCodes.Status409Conflict
+                                };
+                            }
+
+
+                        }
+                        else
+                        {
+                            apiResponse = new ApiResponse()
+                            {
+                                Message = " ExpiryDate should be greater than expiration",
+                                StatusCode = StatusCodes.Status409Conflict
+                            };
+
+                        }
+                    }
+                    else
+                    {
+                        apiResponse = new ApiResponse()
+                        {
+                            Message = $"company with name {companyMastertblModel.CompanyName} already exists",
+                            StatusCode = StatusCodes.Status409Conflict
+
+                        };
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    _repocompanymastertbl.Rollback();
+                    apiResponse = new ApiResponse() { Message = e.Message, StatusCode = StatusCodes.Status400BadRequest };
+                }
+
+
+            }
+            return apiResponse;
+        }
+
+    }
+}
