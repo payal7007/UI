@@ -1,0 +1,350 @@
+----------update---------------
+// Assuming you have an existing 'companyId' for the company you want to update
+int companyIdToUpdate = 123; // Replace with the actual company ID
+
+// Retrieve the existing company model from the repository (_repoComp)
+CompanyModel existingCompany = _repoComp.GetById(companyIdToUpdate);
+
+if (existingCompany != null)
+{
+    // Update properties of the existing company model
+    existingCompany.CName = "UpdatedCompanyName";
+    existingCompany.Address = "UpdatedCompanyAddress";
+
+    // Assuming you have a new file to update the attachment
+    // You can replace this with your logic for obtaining the updated file
+    IFormFile updatedFile = /* Logic to get the updated file */;
+
+    byte[] updatedImageData;
+    using (MemoryStream ms = new MemoryStream())
+    {
+        updatedFile.CopyTo(ms);
+        updatedImageData = ms.ToArray();
+    }
+
+    // Update the FAmodel object for the attachment
+    FAmodel existingAttachment = _repoFA.GetByReferenceId(companyIdToUpdate);
+
+    if (existingAttachment != null)
+    {
+        existingAttachment.Filename = updatedFile.FileName;
+        existingAttachment.FileSize = updatedFile.Length.ToString();
+        existingAttachment.FileType = updatedFile.ContentType;
+        existingAttachment.Path = updatedImageData;
+
+        // Update the 'model' object in the main repository
+        _repoComp.Update(existingCompany);
+
+        // Update the 'attchmodel' object in the attachment repository
+        _repoFA.Update(existingAttachment);
+
+        // Commit changes to both repositories
+        _repoComp.Commit();
+        Console.WriteLine("Data updated successfully.");
+    }
+    else
+    {
+        Console.WriteLine("Attachment not found for the specified company ID.");
+    }
+}
+else
+{
+    Console.WriteLine("Company not found for the specified ID.");
+}
+---------------------add-----------------------------
+_repoComp.BeginTransaction();
+_repoA = new Repository<Amodel>(_repoComp.Transaction);
+
+try
+{
+    // Ensure that 'CName' property is not null or empty
+    if (!string.IsNullOrEmpty(model.CName))
+    {
+        model.CreatedBy = 1;
+
+        byte[] imageData;
+        using (MemoryStream ms = new MemoryStream())
+        {
+            file.CopyTo(ms);
+            imageData = ms.ToArray();
+        }
+
+        // Add the 'model' object to the repository (_repoComp)
+        if (_repoComp.Add(model))
+        {
+            // Create a new FAmodel object for handling attachments
+            FAmodel attchmodel = new FAmodel()
+            {
+                AttachmentType = 1,
+                ReferenceId = model.CompanyId,
+                Filename = file.FileName,
+                FileSize = file.Length.ToString(),
+                FileType = file.ContentType,
+                Path = imageData,/store the file content as a byte array
+                CreatedBy = model.CreatedBy
+            };
+
+            // Check if the 'attchmodel' object is successfully added to the repository (_repoFA)
+            if (_repoFA.Add(attchmodel))
+            {
+                // If successful, commit changes to both repositories
+                _repoComp.Commit();
+                Console.WriteLine("Data added successfully.");
+            }
+            else
+            {
+                // If unsuccessful, handle the failure (log, display error, etc.)
+                Console.WriteLine("Failed to add data to the attachment repository.");
+            }
+        }
+        else
+        {
+            // If unsuccessful, handle the failure (log, display error, etc.)
+            Console.WriteLine("Failed to add data to the main repository.");
+        }
+    }
+    else
+    {
+        Console.WriteLine("Custom condition for success not met. The 'CName' property is required.");
+    }
+}
+catch (Exception ex)
+{
+    // If an exception occurs, roll back the transaction
+    _repoComp.RollbackTransaction();
+
+    // Handle the exception (log, display error, etc.)
+    Console.WriteLine($"An error occurred: {ex.Message}");
+}
+finally
+{
+    // Ensure the transaction is properly disposed
+    _repoComp.DisposeTransaction();
+}
+------------------delete-------------------
+_repoComp.BeginTransaction();
+_repoA = new Repository<Amodel>(_repoComp.Transaction);
+
+try
+{
+    int companyIdToDelete = /* specify the CompanyId you want to delete */;
+    
+    // Check if the company exists before attempting to delete
+    if (_repoComp.Exists(companyIdToDelete))
+    {
+        // Delete the company from _repoComp
+        _repoComp.Delete(companyIdToDelete);
+
+        // Delete the corresponding attachment from _repoFA
+        FAmodel attachmentToDelete = _repoFA.GetByReferenceId(companyIdToDelete);
+        if (attachmentToDelete != null)
+        {
+            _repoFA.Delete(attachmentToDelete.Id); // Assuming Id is the identifier of the attachment
+        }
+
+        // Commit the transaction
+        _repoComp.CommitTransaction();
+
+        Console.WriteLine("Data deleted successfully.");
+    }
+    else
+    {
+        Console.WriteLine($"Company with ID {companyIdToDelete} not found.");
+    }
+}
+catch (Exception ex)
+{
+    // If an exception occurs, roll back the transaction
+    _repoComp.RollbackTransaction();
+
+    // Handle the exception (log, display error, etc.)
+    Console.WriteLine($"An error occurred: {ex.Message}");
+}
+finally
+{
+    // Ensure the transaction is properly disposed
+    _repoComp.DisposeTransaction();
+}
+-------------------getbyid---------------------
+_repoComp.BeginTransaction();
+_repoA = new Repository<Amodel>(_repoComp.Transaction);
+
+try
+{
+    int companyIdToRetrieve = /* specify the CompanyId you want to retrieve */;
+
+    // Use raw SQL query to retrieve company and attachment data
+    string sqlQuery = $@"
+        SELECT c.*, a.*
+        FROM Companies c
+        LEFT JOIN Attachments a ON c.CompanyId = a.ReferenceId
+        WHERE c.CompanyId = {companyIdToRetrieve}";
+
+    List<(CompanyModel, FAmodel)> result = _dbContext.Query<(CompanyModel, FAmodel)>().FromSqlRaw(sqlQuery).ToList();
+
+    if (result.Any())
+    {
+        // Assuming that the first item in the result list corresponds to the retrieved data
+        (CompanyModel retrievedCompany, FAmodel attachment) = result.First();
+
+        // Do something with the retrieved company and attachment data...
+        Console.WriteLine($"Company Name: {retrievedCompany.CName}");
+        Console.WriteLine($"Attachment Filename: {attachment?.Filename}");
+        // Other properties...
+
+        Console.WriteLine("Data retrieved successfully.");
+    }
+    else
+    {
+        Console.WriteLine($"Company with ID {companyIdToRetrieve} not found.");
+    }
+}
+catch (Exception ex)
+{
+    // Handle the exception (log, display error, etc.)
+    Console.WriteLine($"An error occurred: {ex.Message}");
+}
+finally
+{
+    // Ensure the transaction is properly disposed
+    _repoComp.DisposeTransaction();
+}
+--------------------update-----------------
+[HttpPost]
+public IActionResult UpdateCompanyWithImage(int companyId)
+{
+    _repoComp.BeginTransaction();
+    _repoA = new Repository<Amodel>(_repoComp.Transaction);
+
+    try
+    {
+        // Retrieve the company by its ID
+        CompanyModel existingCompany = _repoComp.GetById(companyId);
+
+        if (existingCompany != null)
+        {
+            // Assuming you have a method to get the corresponding attachment
+            FAmodel existingAttachment = _repoFA.GetByReferenceId(companyId);
+
+            if (existingAttachment != null)
+            {
+                // Assuming you are expecting a single file in the form submission
+                IFormFile updatedFile = HttpContext.Request.Form.Files.FirstOrDefault();
+
+                if (updatedFile != null && updatedFile.Length > 0)
+                {
+                    // Update properties of the existing attachment
+                    existingAttachment.Filename = updatedFile.FileName;
+                    existingAttachment.FileSize = updatedFile.Length.ToString();
+                    existingAttachment.FileType = updatedFile.ContentType;
+
+                    // Update image data
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        updatedFile.CopyTo(ms);
+                        existingAttachment.Path = ms.ToArray();
+                    }
+
+                    // Save changes to the attachment repository (_repoFA)
+                    _repoFA.Update(existingAttachment);
+
+                    // Commit changes to both repositories
+                    _repoComp.CommitTransaction();
+
+                    Console.WriteLine("Data updated successfully.");
+                }
+                else
+                {
+                    Console.WriteLine("No file uploaded or file is empty.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Attachment not found for the specified company ID.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Company not found for the specified ID.");
+        }
+    }
+    catch (Exception ex)
+    {
+        // If an exception occurs, roll back the transaction
+        _repoComp.RollbackTransaction();
+
+        // Handle the exception (log, display error, etc.)
+        Console.WriteLine($"An error occurred: {ex.Message}");
+    }
+    finally
+    {
+        // Ensure the transaction is properly disposed
+        _repoComp.DisposeTransaction();
+    }
+
+    // Return appropriate response or redirect
+    return RedirectToAction("Index"); // Adjust based on your application flow
+}
+==============update===============
+[HttpPost]
+public IActionResult UpdateCompanyWithImage(int companyId)
+{
+    _repoComp.BeginTransaction();
+    _repoA = new Repository<Amodel>(_repoComp.Transaction);
+
+    try
+    {
+        // Assuming you are expecting a single file in the form submission
+        IFormFile updatedFile = HttpContext.Request.Form.Files.FirstOrDefault();
+
+        if (updatedFile != null && updatedFile.Length > 0)
+        {
+            // Update query to update the Attachment table
+            string updateQuery = $@"
+                UPDATE Attachments
+                SET Filename = @Filename, FileSize = @FileSize, FileType = @FileType, Path = @Path
+                WHERE ReferenceId = @ReferenceId";
+
+            _dbContext.Database.ExecuteSqlRaw(updateQuery,
+                new SqlParameter("@Filename", updatedFile.FileName),
+                new SqlParameter("@FileSize", updatedFile.Length.ToString()),
+                new SqlParameter("@FileType", updatedFile.ContentType),
+                new SqlParameter("@Path", GetFileBytes(updatedFile)),
+                new SqlParameter("@ReferenceId", companyId));
+
+            // Commit changes to both repositories
+            _repoComp.CommitTransaction();
+
+            Console.WriteLine("Data updated successfully.");
+        }
+        else
+        {
+            Console.WriteLine("No file uploaded or file is empty.");
+        }
+    }
+    catch (Exception ex)
+    {
+        // If an exception occurs, roll back the transaction
+        _repoComp.RollbackTransaction();
+
+        // Handle the exception (log, display error, etc.)
+        Console.WriteLine($"An error occurred: {ex.Message}");
+    }
+    finally
+    {
+        // Ensure the transaction is properly disposed
+        _repoComp.DisposeTransaction();
+    }
+
+    // Return appropriate response or redirect
+    return RedirectToAction("Index"); // Adjust based on your application flow
+}
+
+private byte[] GetFileBytes(IFormFile file)
+{
+    using (MemoryStream ms = new MemoryStream())
+    {
+        file.CopyTo(ms);
+        return ms.ToArray();
+    }
+}
