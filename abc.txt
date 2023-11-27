@@ -1,0 +1,941 @@
+
+freelancer.dom3@promptsoftech.in
+Subject: TimeSheet-Payal-04-Oct-2023
+
+Name: Payal Limbola
+Date: 04-Oct-2023
+
+Topic:Reading database 
+Hrs: 1
+Progress: in Prograss.
+
+Topic: installation and solve rocket chat issue
+Hrs: 1
+Progress: Completed.
+
+Topic: Perform database query
+Hrs: 2
+Progress: In Progress.
+
+Topic: Creating Example on Fibonacci series,Armstrong number,Swap number
+Hrs: 2
+Progress: completed.
+
+Name: Payal Limbola
+Date: 09-Aug-2023
+
+Topic:Reading Group by,Aggregate function,Having clause and Join
+Hrs: 1:30
+Progress: completed.
+
+Topic: work on today task
+Hrs: 3
+Progress: In Progress.
+
+Topic: Reading concept of normalization 
+Minutes :30 
+Progress: In Progress.
+
+Topic: Creating Example of sealed class and reading concept of try catch
+Hrs: 1
+Progress: completed.
+
+
+
+Name: Payal Limbola
+Date: 10-Aug-2023
+
+Topic:create table ,insert record
+Hrs: 3
+Progress: completed.
+
+Topic: perform query
+Hrs: 2
+Progress: In Progress.
+
+Topic: read concept of normalization with types
+Hrs : 1
+Progress: In Progress.
+
+Name: Payal Limbola
+Date: 08-Aug-2023
+
+Topic: Worked on facebook hit history example
+Hrs: 5
+Progress: Completed.
+
+
+Topic:  create example of array type and try catch
+Hrs: 1 
+Progress: Completed.
+
+Name: Payal Limbola
+Date: 14-Aug-2023
+
+Topic:create table for today task
+Hrs: 1:30
+Progress: completed.
+
+Topic: insert record through storage procedure 
+Hrs: 2
+Progress: completed
+
+Topic: create storage procedure for insert,update,delete
+Hrs : 1:30
+Progress: completed
+
+Topic: work on aggregate function
+Minutes : 1
+Progress: in progress
+
+Name: Payal Limbola
+Date: 16-Aug-2023
+
+Topic:work on aggregate function
+Hrs: 30
+Progress: completed.
+
+Topic: read concept of reflection
+minutes : 1
+Progress: in progress
+
+Topic: create storage procedure for insert,update,delete and select
+Hrs : 1:30
+Progress: completed
+
+Topic: create example of number pattern and alphabet pattern
+Minutes : 1
+Progress: completed.
+
+Topic : read concept of generic class and create generic class for tables
+Hrs : 2:30
+Progress : in completed
+
+
+Name: Payal Limbola
+Date: 17-Aug-2023
+
+Topic:revised abstrac class,,sealed class,list and delegate
+Hrs: 2
+Progress: completed.
+
+Topic: watched video of generic class 
+minutes : 1:30
+Progress: completed
+
+Topic: create example of reverse number,sum of digit,palidrome number
+Hrs : 1:30
+Progress: completed
+
+Topic: practiced on storage procedure
+Minutes : 1
+Progress: completed.
+
+Topic : read concept of triggers
+Hrs : 1
+Progress : in progress
+
+Name: Payal Limbola
+Date: 18-Aug-2023
+
+Topic:Handy installtion
+Hrs: 1
+Progress: completed.
+
+Topic: create generic class 
+Hrs: 1
+Progress: completed
+
+Topic: read trigger concept, create trigger,practice on view
+Hrs : 3
+Progress: 
+
+Name: Payal Limbola
+Date: 21-Aug-2023
+
+Topic: perform trigger query
+Hrs: 4:30
+Progress: completed.
+
+Topic: create generic class  
+Hrs: 1
+Progress: completed
+
+Topic: read view concept and create view 
+Hrs : 1:30
+Progress: in progress
+
+Name: Payal Limbola
+Date: 22-Aug-2023
+
+Topic: insert,update,delete record in ado.net using store procedure 
+Hrs: 4:30
+Progress: completed.
+
+Topic: read ado.net tutorial 
+Hrs : 2
+Progress: in progress
+
+Name: Payal Limbola
+Date: 23-Aug-2023
+
+Topic: learn datareader, dataset and datatable
+Hrs : 2
+Progress: completed
+
+Topic: create more store procedure and perform crude operation 
+Hrs: 2:30
+Progress: completed.
+
+Topic: read diff. between datatable and dataset and ado.net tutorial
+Hrs : 1:30
+Progress: in progress
+
+Name: Payal Limbola
+Date: 24-Aug-2023
+
+Topic: read diff. between dataset and datatable,adapter and datatable
+Hrs : 1:30
+Progress: completed
+
+Topic: create dataset and datatable example 
+Hrs: 2
+Progress: completed.
+
+Topic: watched video of ado.net
+Hrs : 2
+Progress: completed
+
+Topic: read about cursor
+Hrs : 1
+Progress: in progress
+
+Name: Payal Limbola
+Date: 25-Aug-2023
+
+Topic: add more tables in database and update tables
+Hrs : 1:30
+Progress: completed
+
+Topic: create new project in ado.net
+Hrs: 3:30
+Progress: completed.
+
+Topic: create folder on git and upload project
+Hrs: 1
+Progress: completed.
+
+Name: Payal Limbola
+Date: 28-Aug-2023
+
+Topic: create data access in ado.net
+Hrs : 2
+Progress: in Progress
+
+Topic: create more trigger in the database
+Hrs: 2:30
+Progress: completed.
+
+Topic: worked on srs 
+Hrs: 1:30
+Progress: In progress
+
+Topic: worked on flowchart
+Hrs: 1
+Progress: In progress
+
+Name: Payal Limbola
+Date: 29-Aug-2023
+
+Topic: watched video on clustered and nonclustered index
+Hrs: 2:30
+Progress: completed.
+
+Topic: learn row number in sql server 
+Hrs: 1
+Progress: completed
+
+Topic: create example on index
+Hrs : 1:30
+Progress: completed
+
+Topic: learn diff. between clustered and nonclustered index
+Hrs: 1
+Progress: In progress
+
+Name: Payal Limbola
+Date: 01-Sep-2023
+
+Topic: implement tables and create new SP
+Hrs: 2
+Progress: completed.
+
+Topic: change in model in c#
+Hrs: 3
+Progress: completed
+
+Topic: create new triggers database
+Hrs : 1:30
+Progress: in progress
+
+Name: Payal Limbola
+Date: 11-Sep-2023
+
+Topic: create new project in mvc and learn about the folder structure
+Hrs: 2:30
+Progress: completed.
+
+Topic: create grideview and repeatar in asp.net
+Hrs: 2
+Progress: completed
+
+Topic: learn folder structure in aspx project
+Hrs : 1:30
+Progress: in completed
+
+
+Name: Payal Limbola
+Date: 12-Sep-2023
+
+Topic: watched video on mvc tutorial
+Hrs: 2:30
+Progress: in progress
+
+Topic:  create signup page in aspx application
+Hrs: 2
+Progress: completed
+
+Topic: learn and watched video om entity framework
+Hrs : 1:30
+Progress: in progress
+
+Name: Payal Limbola
+Date: 13-Sep-2023
+
+Topic:  learn javascript tutorial
+Hrs: 4
+Progress: in progress
+
+Topic: watched video on javascript array and function
+Hrs: 2:30
+Progress: in completed
+
+Name: Payal Limbola
+Date: 14-Sep-2023
+
+Topic: learn javascript tutorial
+Hrs: 1:30
+Progress: in progress
+
+Topic: create registration form with validation
+Hrs: 2:30
+Progress: completed
+
+Topic: learn tempdata,viewbag,viewdata and applied it
+Hrs: 2
+Progress: completed
+
+Name: Payal Limbola
+Date: 15-Sep-2023
+
+Topic: learn cte and create cte example
+Hrs: 2.5
+Progress: completed
+
+Topic: learn temptable and table variable
+Hrs: 1.5
+Progress: in progress
+
+Topic: learn javascript tutorial
+Hrs: 1.5
+Progress: in progress
+
+Topic: create model in mvc and display data from controller to view
+Hrs: 1
+Progress: in completed
+
+Name: Payal Limbola
+Date: 18-Sep-2023
+
+Topic: create example of tamporary table and  temp variable in mvc
+Hrs: 2
+Progress: completed
+
+Topic: create example of cte in mvc
+Hrs: 1
+Progress: completed
+
+Topic: create custome page in mvc
+Hrs: 1.5
+Progress: in progress
+
+Topic: watched video on mvc tutorial
+Hrs: 1
+Progress: in progress
+
+Topic: create example of view method
+Hrs: 1
+Progress: in progress
+
+
+
+Name: Payal Limbola
+Date: 19-Sep-2023
+
+Topic: learn about mvc routing
+Hrs: 1.5
+Progress: in progress
+
+Topic: tempdata keep example in mvc
+Hrs: 1
+Progress: completed
+
+Topic: learn about filter in mvc
+Hrs: 2
+Progress: in progress
+
+Topic: create example of view method
+Hrs: 1
+Progress: in progress
+
+Name: Payal Limbola
+Date: 20-Sep-2023
+
+Topic: learn about filter in mvc
+Hrs: 1:5
+Progress: in progress
+
+Topic: work on registration module in olx
+Hrs: 3.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 21-Sep-2023
+
+Topic: work on controller in olx project
+Hrs: 1.5
+Progress: in progress
+
+Topic: learn await and async in asp.net mvc
+Hrs: 1.5
+Progress: completed
+
+Topic: 
+Hrs: 2
+Progress: in progress
+
+Name: Payal Limbola
+Date: 22-Sep-2023
+
+Topic: work on contoller in olx project
+Hrs: 2
+Progress: in progress
+
+Topic: discussed database in register module and update it
+Hrs: 2
+Progress: completed
+
+Topic: watch video on validation in asp.net mvc
+Hrs: 2.5
+Progress: completed
+
+Name: Payal Limbola
+Date: 25-Sep-2023
+
+Topic: work on controller and add validation in olx project
+Hrs: 2
+Progress: in progress
+
+Topic: learn await and async in asp.net mvc
+Hrs: 1.5
+Progress: completed
+
+Topic: watch video on validation in mvc
+Hrs: 1.5
+Progress: completed
+
+Topic: discussed database in adver. management and create it 
+Hrs: 2
+Progress: in progress
+
+Name: Payal Limbola
+Date: 26-Sep-2023
+
+Topic: work on olx project
+Hrs: 2.5
+Progress: in progress
+
+Topic: solve the error in olx project
+Hrs: 1.5
+Progress: completed
+
+Topic: watch video on html helper in mvc
+Hrs: 2
+Progress: completed
+
+Name: Payal Limbola
+Date: 28-Sep-2023
+
+Topic: add field in user database and update it
+Hrs: 1
+Progress: completed
+
+Topic: create database and ui in adds manage in olx project
+Hrs: 3.5
+Progress: in progress
+
+Topic: watch video on how to fetch data and get list in database
+Hrs: 2
+Progress: completed
+
+Name: Payal Limbola
+Date: 28-Sep-2023
+
+Topic: learn data validation in asp.net mvc
+Hrs: 1.5
+Progress: completed
+
+Topic: watch video on retrive image from database
+Hrs: 2
+Progress: completed
+
+Topic: work on adds manage in olx project 
+Hrs: 3
+Progress: in progress
+
+Name: Payal Limbola
+Date: 30-Sep-2023
+
+Topic: work on controller 
+Hrs: 2.5
+Progress: in progress
+
+Topic: work on database in adds manage
+Hrs: 2
+Progress: completed
+
+Topic: watch video on viewmodel in asp.net mvc
+Hrs: 2
+Progress: completed
+
+Name: Payal Limbola
+Date: 03-Oct-2023
+
+Topic: work on adds manage module 
+Hrs: 4
+Progress: in progress
+
+Topic: watch video on fetch data from database
+Hrs: 1
+Progress: completed
+
+Topic: solve the error in olx project
+Hrs: 1.5
+Progress: completed
+
+Name: Payal Limbola
+Date: 04-Oct-2023
+
+Topic: work on registration module and solve problem
+Hrs: 1.5
+Progress: completed
+
+Topic: adds manage module 
+Hrs: 2
+Progress: in progress
+
+Topic: solve the error in ads manage module
+Hrs: 1
+Progress: completed
+
+Topic: work on git 
+Hrs: 1
+Progress: completed
+
+Name: Payal Limbola
+Date: 05-Oct-2023
+
+Topic: work on contoller
+Hrs: 1.5
+Progress: completed
+
+Topic: learn json result in asp.net mvc 
+Hrs: 2
+Progress: in progress
+
+Topic: watch video on get and post data using ajax in mvc
+Hrs: 2.5
+Progress: completed
+
+Topic: learn javascript 
+Hrs: 1
+Progress: completed
+
+Name: Payal Limbola
+Date: 06-Oct-2023
+
+Topic: learn about javascript
+Hrs: 1.5
+Progress: completed
+
+Topic: learn json result in asp.net mvc 
+Hrs: 2
+Progress: in progress
+
+Topic: watch video on get and post data using ajax in mvc
+Hrs: 2.5
+Progress: completed
+
+Name: Payal Limbola
+Date: 10-Oct-2023
+
+Topic: work on olx project
+Hrs: 2.5
+Progress: completed
+
+Topic: watch video on async controller in asp.net mvc
+Hrs: 1.5
+Progress: in progress
+
+Topic: learn about web api in mvc
+Hrs: 1.5
+Progress: in progress
+
+Topic: solve the error in olx project
+Hrs: 1
+Progress: in progress
+
+Name: Payal Limbola
+Date: 11-Oct-2023
+
+Topic: work on database in olx project
+Hrs: 1
+Progress: completed
+
+Topic: work on olx project
+Hrs: 2
+Progress: in progress
+
+Topic: leran about async controller in asp.net mvc
+Hrs: 1.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 13-Oct-2023
+
+Topic: solve error on add project to git
+Hrs: 3.5
+Progress: in progress
+
+Topic: watch video on web api in asp.net mvc
+Hrs: 1
+Progress: in progress
+
+Topic: learn about ajax
+Hrs: 2
+Progress: in progress
+
+Name: Payal Limbola
+Date: 16-Oct-2023
+
+Topic: add project on git to error solve
+Hrs: 1.5
+Progress: completed
+
+Topic: watch video on web api in asp.net mvc
+Hrs: 2
+Progress: in progress
+
+Topic: work on registration module and ads manage module
+Hrs: 3
+Progress: in progress
+
+Name: Payal Limbola
+Date: 17-Oct-2023
+
+Topic: approval pending display in admin side
+Hrs: 2.5
+Progress: in progress
+
+Topic: change in ads list and store procedure
+Hrs: 2
+Progress: completed
+
+Topic: git error solve
+Hrs: 1.5
+Progress: completed
+
+Name: Payal Limbola
+Date: 18-Oct-2023
+
+Topic: approval pending display in admin side
+Hrs: 1.5
+Progress: completed
+
+Topic: work on registration form validation
+Hrs: 1.5
+Progress: completed
+
+Topic: work on fetch multiple image and update image
+Hrs: 3
+Progress: in progress
+
+Name: Payal Limbola
+Date: 20-Oct-2023
+
+Topic: select data from database and insert into dropdownlist 
+Hrs: 2.5
+Progress: completed
+
+Topic: changes in adslist
+Hrs: 1
+Progress: completed
+
+Topic: work on update image in sell module
+Hrs: 2.5
+Progress: in progress
+
+select data from database and insert into dropdownlist
+
+
+Name: Payal Limbola
+Date: 23-Oct-2023
+
+Topic: work on update image in sell module
+Hrs: 2
+Progress: completed
+
+Topic: learn about angular
+Hrs: 1.5
+Progress: completed
+
+Topic: learn web api and api vs mvc controller 
+Hrs: 2.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 26-Oct-2023
+
+Topic:learn scope vs singleton vs transient and swagger
+Hrs: 2.5
+Progress: completed
+
+Topic: watch video on asp .net Core environment variables
+Hrs: 1
+Progress: completed
+
+Topic: learn about error handling in asp.net api
+Hrs: 2.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 27-Oct-2023
+
+Topic: learn about web api in asp.net core
+Hrs: 2
+Progress: in progress
+
+Topic: learn about c# 
+Hrs: 2.5
+Progress: in progress
+
+Topic: watch video on dependancy injection in asp.net api
+Hrs: 1.5
+Progress: completed
+
+Name: Payal Limbola
+Date: 30-Oct-2023
+
+Topic: learn about swagger,fluent migrator 
+Hrs: 2.5
+Progress: in progress
+
+Topic: learn oops concepts in c#
+Hrs: 2
+Progress: in progress
+
+Topic: watch video on model binding in asp.net core 
+Hrs: 2
+Progress: completed
+
+Name: Payal Limbola
+Date: 31-Oct-2023
+
+Topic: lean about status code, request response type,swagger,scope vs singleton vs transient
+Hrs: 4.5
+Progress: completed
+
+Topic: watch video on dependecy injection 
+Hrs: 1.5
+Progress: completed
+
+
+Name: Payal Limbola
+Date: 02-Nov-2023
+
+Topic: practice about swagger, write program of swagger
+Hrs: 3.5
+Progress: in progress
+
+Topic: created example of api versioning
+Hrs: 1
+Progress: completed
+
+Topic : understand of project structure 
+Hrs: 1.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 07-Nov-2023
+
+Topic: learn jwt in asp.net core and implement it
+Hrs: 2.5
+Progress: in progress
+
+Topic: error in creating a table using fluent migration
+Hrs: 3.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 08-Nov-2023
+
+Topic: tracing the given project and trying to understand it
+Hrs: 6.5
+Progress: in progress
+
+
+tracing the given project and trying to understand it
+
+
+Name: Payal Limbola
+Date: 09-Nov-2023
+
+Topic: practice readone method
+Hrs: 1.5
+Progress: completed
+
+Topic: practice query method
+Hrs: 2
+Progress: completed
+
+Topic: practice readall method
+Hrs: 1
+Progress: in progress
+
+Topic: practice query method
+Hrs: 1
+Progress: completed
+
+Topic: practice count and add method
+Hrs: 1.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 10-Nov-2023
+
+Topic: practice readall and query method
+Hrs: 1.5
+Progress: completed
+
+Topic: practice update and delete method
+Hrs: 1
+Progress: in progress
+
+Name: Payal Limbola
+Date: 21-Nov-2023
+
+Topic:  method
+Hrs: 
+Progress: completed
+
+Topic: practice query method
+Hrs: 2
+Progress: completed
+
+Topic: practice readall method
+Hrs: 1
+Progress: in progress
+
+Topic: practice query method
+Hrs: 1
+Progress: completed
+
+Topic: practice count and add method
+Hrs: 1.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 21-Nov-2023
+
+Topic: create readall readone and getall method
+Hrs: 1.5
+Progress: completed
+
+Topic: create delete and update method and solve error 
+Hrs: 2.5
+Progress: completed
+
+Topic: work on pagination
+Hrs: 1.5
+Progress: in progress
+
+Name: Payal Limbola
+Date: 22-Nov-2023
+
+Topic: create add method
+Hrs: 4
+Progress: completed
+
+Topic: create delete method
+Hrs: 1.5
+Progress: inprogress
+
+Topic: create getbyid method
+Hrs: 1
+Progress: in progress
+
+
+Name: Payal Limbola
+Date: 27-Nov-2023
+
+Topic: create add method
+Hrs: 6
+Progress: in progress
+
+Topic: create update method
+Hrs: 2
+Progress: in progress 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
