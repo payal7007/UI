@@ -348,3 +348,277 @@ private byte[] GetFileBytes(IFormFile file)
         return ms.ToArray();
     }
 }
+28/11
+using AI.Models;
+using Azure;
+using FluentMigrator.Runner.Generators;
+using Microsoft.AspNetCore.Http;
+using MongoDB.Bson.Serialization.Serializers;
+using Prompt.Infrastructure;
+using Serilog.Sinks.File;
+using Swashbuckle.AspNetCore.Swagger;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography.Xml;
+using System.Text;
+using System.Threading.Tasks;
+using Vega;
+using static AI.Models.CompanyMasterrModel;
+using static AI.Models.Enums;
+using static MongoDB.Driver.WriteConcern;
+
+namespace AI.Services.CompanyMasterr
+{
+    public class CompanyMasterr : CommonService, ICompanyMasterr
+    {
+        public Repository<CompanyMasterrModel> _repocompanymasterr { get; set; }
+        //public Repository<UserMasterrModel> _repousermasterr { get; set; }
+        public Repository<AttachmentMappingModel> _repoattachmentmapping { get; set; }
+        public Repository<ACustomModel> _repoacustom { get; set; }
+        public CompanyMasterr(IHttpContextAccessor httpContext, ICurrentUser currentUser) : base(httpContext, currentUser)
+        {
+        }
+
+        public ApiResponse Add(CompanyMasterrModel companyMasterrModel, IFormFile file)
+        {
+            ApiResponse response = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymasterr = new Repository<CompanyMasterrModel>(connection);
+
+                _repocompanymasterr.BeginTransaction();
+                _repoattachmentmapping = new Repository<AttachmentMappingModel>(_repocompanymasterr.Transaction);
+                //AttachmentMappingModel data = companyMasterrModel.GetMapped<AttachmentMappingModel, CompanyMasterrModel>();
+                if (!string.IsNullOrEmpty(companyMasterrModel.CompanyName))
+                {
+                    companyMasterrModel.CreatedBy = 1;
+                    byte[] imageData;
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        file.CopyTo(ms);
+                        imageData = ms.ToArray();
+                    }
+                    _repocompanymasterr.Add(companyMasterrModel);
+                    AttachmentMappingModel attachmentMappingModel = new AttachmentMappingModel();
+
+                    attachmentMappingModel.Atype = 1;
+                    attachmentMappingModel.ReferenceId = companyMasterrModel.Cid;
+                    attachmentMappingModel.FileName = file.FileName;
+                    attachmentMappingModel.Filesize = file.Length;
+                    attachmentMappingModel.FileType = file.ContentType;
+                    attachmentMappingModel.Filepath = imageData;
+                    attachmentMappingModel.CreatedBy = 1;
+
+                    //_repoattachmentmapping data = companyMasterr.GetMapped<AttachmentMappingModel, CompanyMasterrModel>();
+
+                    _repoattachmentmapping.Add(attachmentMappingModel);
+                    _repocompanymasterr.Commit();
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Message = "added"
+                    };
+                }
+
+                else
+                {
+                    _repocompanymasterr.Rollback();
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = "error "
+                    };
+
+                }
+                return response;
+            }
+
+        }
+
+
+        public ApiResponse Delete(long id)
+        {
+            ApiResponse apiResponse = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymasterr = new Repository<CompanyMasterrModel>(connection);
+                _repoattachmentmapping = new Repository<AttachmentMappingModel>(connection);
+                CompanyMasterrModel companyMasterrModel = _repocompanymasterr.ReadOne(id);
+                AttachmentMappingModel attachmentMappingModel1;
+
+                if (companyMasterrModel != null)
+                {
+                    if (_repoattachmentmapping.Exists("ReferenceId= @id and IsActive=@act", new
+                    {
+                        id = companyMasterrModel.Cid,
+                        act = RecordStatusEnum.Active
+                    }))
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status409Conflict,
+                            Message = string.Format("first delete attachment then company ", companyMasterrModel.Cid),
+                            Data = false
+                        };
+                    else
+                    {
+                        _repocompanymasterr.Delete(id, _currentUser?.Info?.Id);
+                       // AttachmentMappingModel attachmentMappingModel = _repoattachmentmapping.ReadOne(id);
+
+                        //_repoattachmentmapping.Delete(id, _currentUser?.Info?.Id);
+
+                        apiResponse = new ApiResponse
+                        {
+                            StatusCode = StatusCodes.Status200OK,
+                            Message = "deleted"
+                        };
+
+                    }
+                }
+                else
+                {
+                    apiResponse = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status204NoContent,
+                        Message = "record Not Found",
+                        Data = false
+                    };
+                }
+            }
+            return apiResponse;
+        }
+
+
+        public ApiResponse GetById(long id)
+        {
+            ApiResponse response = default(ApiResponse);
+            ACustomModel aCustomModel = new ACustomModel();
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                //_repocompanymasterr = new Repository<CompanyMasterrModel>(connection); 
+                _repoattachmentmapping = new Repository<AttachmentMappingModel>(connection);
+                _repoacustom= new Repository<ACustomModel>(connection);
+                string sqlQuery = $@"select c.Cid, c.CompanyName, c.Address, a.Filepath
+                     from CompanyMasterr c 
+                     left join AttachmentMapping a on c.Cid = a.ReferenceId 
+                     where c.Cid = @cid";
+
+                aCustomModel= _repoacustom.Query<ACustomModel,ACustomModel>(sqlQuery,new Parameter("act",System.Data.DbType.Boolean,(int)RecordStatusEnum.Active),
+                    new Parameter("cid",System.Data.DbType.Int64,id)).FirstOrDefault();
+
+                if (aCustomModel != null)
+                {
+
+                    //List<AttachmentMappingModel> attachmentMappingModels = _repoattachmentmapping.Query<AttachmentMappingModel, AttachmentMappingModel>(
+                    //"select Filepath from AttachmentMapping where ReferenceId = @CompanyId",
+                    //new Parameter("CompanyId", System.Data.DbType.Int64, id));
+                    List<AttachmentMappingModel> attachmentMappingModels = _repoattachmentmapping.Query<AttachmentMappingModel,AttachmentMappingModel>(
+                "select Filepath from AttachmentMapping where ReferenceId = @CompanyId",
+                new Parameter("CompanyId", System.Data.DbType.Int64, id));
+
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status200OK,
+                        Data = new { Company = aCustomModel, LogoPaths = attachmentMappingModels }
+                    };
+
+  
+                }
+                else
+                {
+                    response = new ApiResponse
+                    {
+                        StatusCode = StatusCodes.Status404NotFound,
+                        Message = "No Record Found",
+                        Data = false
+                    };
+                }
+            }
+            return response;
+        }
+
+        public ApiResponse Update(long id,CompanyMasterrModel companyMasterrModel, IFormFile file)
+        {
+            ApiResponse apiResponse = default(ApiResponse);
+            using (var connection = Tenant.GetConnection(_httpContext))
+            {
+                _repocompanymasterr = new Repository<CompanyMasterrModel>(connection);
+                _repoattachmentmapping = new Repository<AttachmentMappingModel>(connection);
+                _repocompanymasterr.BeginTransaction();
+                _repoattachmentmapping = new Repository<AttachmentMappingModel>(_repocompanymasterr.Transaction);
+                try
+                {
+                    CompanyMasterrModel cmModel = _repocompanymasterr.ReadOne(id);
+                    if (cmModel != null)
+                    {
+                        //if (!_repocompanymasterr.Exists(criteria: "CompanyName=@compname and Cid!=@id", parameters: new { compname = companyMasterrModel.CompanyName, id = companyMasterrModel.Cid }))
+                        //{
+                            companyMasterrModel.UpdatedBy = 1;
+                            companyMasterrModel.CreatedBy = 1;
+                            bool b=_repocompanymasterr.Update(companyMasterrModel);
+                            if (b)
+                            {
+                            AttachmentMappingModel attachmentMappingModel = new AttachmentMappingModel();
+                            attachmentMappingModel = _repoattachmentmapping.ReadOne("ReferenceId=@id", new
+                            {
+                                id=id
+                            });
+                            byte[] imageData;
+                                using (MemoryStream ms = new MemoryStream())
+                                {
+                                    file.CopyTo(ms);
+                                    imageData = ms.ToArray();
+                                }
+                             
+                                attachmentMappingModel.Atype = 1;
+                                attachmentMappingModel.ReferenceId = cmModel.Cid;
+                                attachmentMappingModel.FileName = file.FileName;
+                                attachmentMappingModel.Filesize = file.Length;
+                                attachmentMappingModel.FileType = file.ContentType;
+                                attachmentMappingModel.Filepath = imageData;
+                              
+                                _repoattachmentmapping.Update(attachmentMappingModel);
+                                _repocompanymasterr.Commit();
+                                apiResponse = new ApiResponse()
+                                {
+                                    Message = "updated successfully",
+                                    StatusCode = StatusCodes.Status200OK
+                                };
+                            }
+                        //}
+                        //else
+                        //{
+                        //    apiResponse = new ApiResponse()
+                        //    {
+                        //        Message = $"company with name {companyMasterrModel.CompanyName} already exists",
+                        //        StatusCode = StatusCodes.Status200OK
+                        //    };
+
+                        //}
+                    }
+                    else
+                    {
+                        apiResponse = new ApiResponse()
+                        {
+                            Message = $"company with name {companyMasterrModel.CompanyName} not found",
+                            StatusCode = StatusCodes.Status400BadRequest
+                        };
+                    }
+                }
+                catch (Exception e)
+                {
+                    _repocompanymasterr.Rollback();
+                    apiResponse = new ApiResponse() { Message = e.Message, StatusCode = StatusCodes.Status400BadRequest };
+                }
+            }
+                return apiResponse;
+            }
+        }
+    }
+
+
+
+
+
+
